@@ -1,29 +1,125 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>QRcode</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: white; color: black; }
-    header { padding: 20px; border-bottom: 1px solid #eee; }
-    h1 { font-size: 28px; font-weight: bold; }
-    p { color: #666; margin-top: 5px; }
-    main { max-width: 500px; margin: 20px auto; padding: 0 15px; }
-    label { display: block; font-weight: bold; margin-bottom: 8px; }
-    textarea { width: 100%; padding: 10px; border: 1px solid #ccc; font-size: 14px; margin-bottom: 15px; }
-    #qr { width: 100%; min-height: 280px; background: #f9f9f9; border: 1px solid #ddd; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
-    #qr img { max-width: 100%; }
-    .buttons { display: flex; gap: 10px; margin: 15px 0; }
-    button { padding: 12px 20px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; }
-    .btn-primary { background: black; color: white; }
-    .btn-primary:active { background: #333; }
-    .btn-secondary { background: white; color: black; border: 1px solid #ccc; }
-    .btn-secondary:active { background: #f0f0f0; }
-    #notice { padding: 12px; background: #fffacd; border: 1px solid #ccc; margin: 15px 0; display: none; }
-    #modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 999; }
-    #modal.active { display: flex; }
-    .modal-box { background: white; padding: 20px; border-radius: 8px; max-width: 280px; width: 90%; }
-    .modal-box h2 { margin-bottom: 15px; }
-    .option { padding: 12​​​​​​​​​​​​​​​​
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QRcode</title>
+<style>
+body{margin:0;padding:20px;font-family:Arial,sans-serif;background:white;color:black}
+h1{font-size:24px;margin:0}
+.subtitle{color:#666;margin:5px 0 20px 0}
+input{width:100%;padding:10px;font-size:14px;margin:10px 0;border:1px solid #ccc}
+#qrbox{width:100%;height:300px;background:#f5f5f5;border:1px solid #ddd;display:flex;align-items:center;justify-content:center;margin:20px 0}
+#qrbox img{max-width:100%}
+button{padding:10px 20px;margin:5px 5px 5px 0;font-size:14px;font-weight:bold;border:none;cursor:pointer}
+.btn1{background:black;color:white}
+.btn2{background:white;color:black;border:1px solid #333}
+#msg{padding:10px;background:#fffacd;border:1px solid #ccc;margin:10px 0;display:none}
+#overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:999}
+#overlay.show{display:flex}
+#popup{background:white;padding:20px;border-radius:8px;width:90%;max-width:300px}
+#popup h2{margin:0 0 15px 0}
+#popup .item{border:1px solid #ddd;padding:10px;margin:10px 0}
+#popup .price{float:right;font-weight:bold}
+#popup p{font-size:12px;color:#666;margin:5px 0}
+</style>
+</head>
+<body>
+
+<h1>QRcode</h1>
+<p class="subtitle">Simple. Fast. Cheap.</p>
+
+<label>What to encode:</label>
+<input type="text" id="txt" value="https://example.com">
+
+<label>Your QR Code:</label>
+<div id="qrbox"><p style="color:#999">QR code will appear here</p></div>
+
+<button class="btn1" onclick="download()">⬇ Download</button>
+<button class="btn2" onclick="copy()">📋 Copy</button>
+
+<div id="msg">💡 Free tier: View & copy only. Upgrade to download.</div>
+
+<div id="overlay">
+<div id="popup">
+<h2>Upgrade</h2>
+<div class="item">
+<div><strong>7-Day Trial</strong><span class="price">$1</span></div>
+<p>Full access for 7 days.</p>
+<button class="btn1" onclick="trial()" style="width:100%">Get Trial</button>
+</div>
+<div class="item">
+<div><strong>Annual</strong><span class="price">$15/yr</span></div>
+<p>Full access for 1 year.</p>
+<button class="btn1" onclick="annual()" style="width:100%">Subscribe</button>
+</div>
+<button class="btn2" onclick="close()" style="width:100%;margin-top:10px">Close</button>
+</div>
+</div>
+
+<script>
+let qr='';
+let access=false;
+
+document.getElementById('txt').addEventListener('input',function(){
+  let text=this.value.trim();
+  if(!text){
+    document.getElementById('qrbox').innerHTML='<p style="color:#999">QR code will appear here</p>';
+    qr='';
+    return;
+  }
+  qr='https://api.qrserver.com/v1/create-qr-code/?size=300x300&data='+encodeURIComponent(text);
+  document.getElementById('qrbox').innerHTML='<img src="'+qr+'" style="max-width:100%">';
+});
+
+function check(){
+  let t=localStorage.getItem('t');
+  let a=localStorage.getItem('a');
+  access=(t && new Date(t)>new Date()) || a;
+  document.getElementById('msg').style.display=access?'none':'block';
+}
+
+function download(){
+  if(!access){document.getElementById('overlay').classList.add('show');return;}
+  if(!qr)return;
+  let l=document.createElement('a');
+  l.href=qr;
+  l.download='qrcode.png';
+  l.click();
+}
+
+function copy(){
+  if(!access){document.getElementById('overlay').classList.add('show');return;}
+  if(!qr)return;
+  navigator.clipboard.writeText(qr);
+  alert('Copied!');
+}
+
+function trial(){
+  let d=new Date();
+  d.setDate(d.getDate()+7);
+  localStorage.setItem('t',d.toISOString());
+  access=true;
+  check();
+  document.getElementById('overlay').classList.remove('show');
+  alert('Trial activated! 7 days full access.');
+}
+
+function annual(){
+  localStorage.setItem('a','1');
+  access=true;
+  check();
+  document.getElementById('overlay').classList.remove('show');
+  alert('Subscription activated! 1 year full access.');
+}
+
+function close(){
+  document.getElementById('overlay').classList.remove('show');
+}
+
+check();
+document.getElementById('txt').dispatchEvent(new Event('input'));
+</script>
+
+</body>
+</html>
